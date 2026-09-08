@@ -21,12 +21,37 @@ import { Sources } from "./sources";
 
 export function Thread(){
 const [mode, setMode] = useState("search");
-const { messages, sendMessage, status } = useChat();
+const [imageBusy, setImageBusy] = useState(false);
+const { messages, sendMessage, setMessages , status } = useChat();
 
-  function onSubmit(text: string) {
-    sendMessage({ text });
+async function onSubmit(text: string) {
+  if (mode === "image") {
+    setImageBusy(true);
+    const response = await fetch("/api/image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: text }),
+    });
+    const data = await response.json();
+    setMessages((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        parts: [{ type: "text", text }],
+      },
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        parts: [{ type: "file", mediaType: "image/png", url: data.url }],
+      },
+    ]);
+    setImageBusy(false);
+    return;
   }
 
+  sendMessage({ text });
+}
   if (messages.length === 0) {
     return (
       <Empty>
@@ -82,6 +107,15 @@ const { messages, sendMessage, status } = useChat();
                             {part.text}
                           </Streamdown>
                         );
+                      case "file":
+                        return (
+                          <img
+                            key={`${message.id}-${i}`}
+                            src={part.url}
+                            alt=""
+                            className="w-full"
+                          />
+                        );
                     }
                   })}
                 </CardContent>
@@ -95,7 +129,7 @@ const { messages, sendMessage, status } = useChat();
           mode={mode}
           setMode={setMode}
           onSubmit={onSubmit}
-          busy={status !== "ready"}
+          busy={status !== "ready" || imageBusy}
         />
       </div>
     </div>
