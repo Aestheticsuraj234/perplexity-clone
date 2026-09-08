@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ThemeProvider } from "@/components/provider/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const oxaniumHeading = Oxanium({subsets:['latin'],variable:'--font-heading'});
 
@@ -32,17 +33,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <TooltipProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="fixed top-4 right-4 z-50">
-            <ModeToggle />
-          </div>
+         
           {children}
         </ThemeProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
