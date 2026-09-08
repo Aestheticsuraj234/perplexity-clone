@@ -18,9 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sources } from "./sources";
 import { FollowUps } from "./follow-ups";
-
 import { useRouter } from "next/navigation";
-
+import {
+  DEFAULT_CHAT_MODEL,
+  type ChatMode,
+  type ChatModelId,
+} from "@/lib/models";
 
 export function Thread({
   chatId,
@@ -28,46 +31,53 @@ export function Thread({
 }: {
   chatId: string;
   initialMessages: UIMessage[];
-}){
-const [mode, setMode] = useState("search");
-const router = useRouter();
-const [imageBusy, setImageBusy] = useState(false);
-const { messages, sendMessage, setMessages , status } = useChat({
-  id:chatId,
-  messages:initialMessages,
-  onFinish(){
-    router.refresh();
-  }
-});
+}) {
+  const [mode, setMode] = useState<ChatMode>("search");
+  const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
+  const router = useRouter();
+  const [imageBusy, setImageBusy] = useState(false);
+  const { messages, sendMessage, setMessages, status } = useChat({
+    id: chatId,
+    messages: initialMessages,
+    onFinish() {
+      router.refresh();
+    },
+  });
 
-async function onSubmit(text: string) {
-  if (mode === "image") {
-    setImageBusy(true);
-    const response = await fetch("/api/image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: text }),
-    });
-    const data = await response.json();
-    setMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        role: "user",
-        parts: [{ type: "text", text }],
-      },
-      {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        parts: [{ type: "file", mediaType: "image/png", url: data.url }],
-      },
-    ]);
-    setImageBusy(false);
-    return;
+  function textRequestBody() {
+    return { mode, model };
   }
 
-  sendMessage({ text });
-}
+  async function onSubmit(text: string) {
+    if (mode === "image") {
+      setImageBusy(true);
+      const response = await fetch("/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text, id: chatId }),
+      });
+      const data = await response.json();
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "user",
+          parts: [{ type: "text", text }],
+        },
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "file", mediaType: "image/png", url: data.url }],
+        },
+      ]);
+      setImageBusy(false);
+      router.refresh();
+      return;
+    }
+
+    sendMessage({ text }, { body: textRequestBody() });
+  }
+
   if (messages.length === 0) {
     return (
       <Empty>
@@ -84,14 +94,15 @@ async function onSubmit(text: string) {
           <SearchBox
             mode={mode}
             setMode={setMode}
+            model={model}
+            setModel={setModel}
             onSubmit={onSubmit}
-            busy={status !== "ready"}
+            busy={status !== "ready" || imageBusy}
           />
         </EmptyContent>
       </Empty>
     );
   }
-
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -136,7 +147,9 @@ async function onSubmit(text: string) {
                   })}
                   <FollowUps
                     parts={message.parts}
-                    onPick={(text) => sendMessage({ text })}
+                    onPick={(text) =>
+                      sendMessage({ text }, { body: textRequestBody() })
+                    }
                     busy={status !== "ready" || imageBusy}
                   />
                 </CardContent>
@@ -149,6 +162,8 @@ async function onSubmit(text: string) {
         <SearchBox
           mode={mode}
           setMode={setMode}
+          model={model}
+          setModel={setModel}
           onSubmit={onSubmit}
           busy={status !== "ready" || imageBusy}
         />

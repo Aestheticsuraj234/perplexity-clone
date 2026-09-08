@@ -3,32 +3,45 @@
 import { useState } from "react";
 import {
   ArrowUpIcon,
+  BubbleChatIcon,
   ImageIcon,
   PaperclipIcon,
+  SearchIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon } from "@hugeicons/core-free-icons";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CHAT_MODELS, type ChatMode, type ChatModelId } from "@/lib/models";
 
 export function SearchBox({
   mode,
   setMode,
+  model,
+  setModel,
   onSubmit,
   busy,
 }: {
-  mode: string;
-  setMode: (mode: string) => void;
+  mode: ChatMode;
+  setMode: (mode: ChatMode) => void;
+  model: ChatModelId;
+  setModel: (model: ChatModelId) => void;
   onSubmit: (text: string) => void;
   busy: boolean;
 }) {
@@ -39,6 +52,13 @@ export function SearchBox({
     onSubmit(text.trim());
     setText("");
   }
+
+  const placeholder =
+    mode === "image"
+      ? "Describe an image..."
+      : mode === "search"
+        ? "Search the web..."
+        : "Ask anything...";
 
   return (
     <InputGroup>
@@ -51,9 +71,7 @@ export function SearchBox({
             submit();
           }
         }}
-        placeholder={
-          mode === "image" ? "Describe an image..." : "Ask anything..."
-        }
+        placeholder={placeholder}
       />
       <InputGroupAddon align="block-end" className="justify-between">
         <Tooltip>
@@ -67,14 +85,37 @@ export function SearchBox({
           <TooltipContent>File upload comes later</TooltipContent>
         </Tooltip>
         <div className="flex items-center gap-2">
+          {mode !== "image" ? (
+            <Select
+              value={model}
+              onValueChange={(value) => {
+                if (value) setModel(value as ChatModelId);
+              }}
+            >
+              <SelectTrigger size="sm" aria-label="Model">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {CHAT_MODELS.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <ToggleGroup
             value={[mode]}
             onValueChange={(value) => {
-              if (value[0]) setMode(value[0]);
+              if (value[0]) setMode(value[0] as ChatMode);
             }}
             variant="outline"
             size="sm"
           >
+            <ToggleGroupItem value="chat">
+              <HugeiconsIcon icon={BubbleChatIcon} strokeWidth={2} data-icon="inline-start" />
+              Chat
+            </ToggleGroupItem>
             <ToggleGroupItem value="search">
               <HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-start" />
               Search

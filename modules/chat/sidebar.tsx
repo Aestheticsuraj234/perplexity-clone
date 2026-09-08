@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export function Sidebar({ chats }: { chats: { id: string; title: string }[] }) {
+export function Sidebar({
+  chats,
+}: {
+  chats: { id: string; title: string; createdAt: Date }[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -13,6 +18,11 @@ export function Sidebar({ chats }: { chats: { id: string; title: string }[] }) {
         <Link href="/" className="block border px-3 py-2 text-center text-sm">
           New
         </Link>
+      </div>
+      <div className="px-3 pb-2">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Previous chats
+        </p>
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-1 px-2 pb-3">
@@ -26,7 +36,10 @@ export function Sidebar({ chats }: { chats: { id: string; title: string }[] }) {
                   : "px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
               }
             >
-              {item.title}
+              <span className="block truncate">{item.title}</span>
+              <span className="text-xs text-muted-foreground">
+                {format(item.createdAt, "MMM d, yyyy")}
+              </span>
             </Link>
           ))}
         </div>
