@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/empty";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sources } from "./sources";
 
 
 export function Thread(){
@@ -72,6 +73,7 @@ const { messages, sendMessage, status } = useChat();
             ) : (
               <Card key={message.id} size="sm">
                 <CardContent>
+                  <Sources parts={message.parts} />
                   {message.parts.map((part, i) => {
                     switch (part.type) {
                       case "text":
