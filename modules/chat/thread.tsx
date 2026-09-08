@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
+import { UIMessage, useChat } from "@ai-sdk/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SearchIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
@@ -17,12 +17,28 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sources } from "./sources";
+import { FollowUps } from "./follow-ups";
+
+import { useRouter } from "next/navigation";
 
 
-export function Thread(){
+export function Thread({
+  chatId,
+  initialMessages,
+}: {
+  chatId: string;
+  initialMessages: UIMessage[];
+}){
 const [mode, setMode] = useState("search");
+const router = useRouter();
 const [imageBusy, setImageBusy] = useState(false);
-const { messages, sendMessage, setMessages , status } = useChat();
+const { messages, sendMessage, setMessages , status } = useChat({
+  id:chatId,
+  messages:initialMessages,
+  onFinish(){
+    router.refresh();
+  }
+});
 
 async function onSubmit(text: string) {
   if (mode === "image") {
@@ -118,6 +134,11 @@ async function onSubmit(text: string) {
                         );
                     }
                   })}
+                  <FollowUps
+                    parts={message.parts}
+                    onPick={(text) => sendMessage({ text })}
+                    busy={status !== "ready" || imageBusy}
+                  />
                 </CardContent>
               </Card>
             ),
